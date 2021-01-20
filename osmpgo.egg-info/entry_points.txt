@@ -1,0 +1,4 @@
+
+        [console_scripts]
+        osmpgo=osmpgo.cli:cli
+    
