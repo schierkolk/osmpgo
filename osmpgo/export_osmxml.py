@@ -110,9 +110,9 @@ class ReadOSM:
         :param line: str
         :return: tuple
         """
-        nid = self.get_attribute_value('id', line)
-        nx = self.get_attribute_value('lon', line)
-        ny = self.get_attribute_value('lat', line)
+        nid = str(self.get_attribute_value('id', line))
+        nx = float(self.get_attribute_value('lon', line))
+        ny = float(self.get_attribute_value('lat', line))
 
         return nid, nx, ny
 
@@ -143,7 +143,7 @@ class ReadOSM:
         self.block_count = 1
 
         open_files = {}
-        for key in self.std_flds.keys():
+        for key in self.std_flds:
             if self.lineb or self.polygonb:
                 open_files[f'{key}_way'] = open(os.path.join(self.tempf, f'{key}_way.pkl'), 'wb')
             if self.pointb:
@@ -188,22 +188,20 @@ class ReadOSM:
                     has_valid_tags = False
 
                     # Make sure node coordinates are valid geographically
-                    if -180 <= float(node_details[1]) <= 180 and -90 <= float(node_details[2]) <= 90:
+                    if -180 <= node_details[1] <= 180 and -90 <= node_details[2] <= 90:
                         type_code = 1
-
                         # Start a new node block if size limit reached
                         if node_count > self.block_count * block_size:
                             node_file.close()
                             self.block_count += 1
                             node_file = open(os.path.join(self.tempf, f'nodeblock_{self.block_count}.pkl'), 'wb')
-                        info = '{0}:{1}:{2}'.format(str(node_details[0]), str(node_details[1]), str(node_details[2]))
-                        # (info)
-                        # node_file.write(info)
-                        pickle.dump(info, node_file)
+                        # info = f'{node_details[0]}:{node_details[1]}:{node_details[2]}'
+                        # pickle.dump(info, node_file)
+                        pickle.dump([node_details[0], node_details[1], node_details[2]], node_file)
 
                         node_count += 1
                         if node_count > 0 and node_count % 1000000 == 0:
-                            print('\tCounting nodes: {0:,}'.format(node_count))
+                            print(f'\tCounting nodes: {node_count:,}')
 
                 except Exception as e:
                     print(e)
@@ -215,18 +213,14 @@ class ReadOSM:
                 has_valid_tags = False
 
                 if way_count > 0 and way_count % 100000 == 0:
-                    print('\tCounting ways: {0:,}'.format(way_count))
+                    print(f'\tCounting ways: {way_count:,}')
 
                 way = (self.return_id(u_line), '')
-                # way_text_string = '{0}#'.format(str(way[0]))
-                # way_text_string = ''
                 way_ref_list = []
                 feature_tags = []
 
             # nd element will only be found inside a way, save it to its way string
             elif element_name == 'nd':
-                # way_text_string += \
-                #    str(get_attribute_value('ref', u_line)) + ':'
                 way_ref_list.append(self.get_attribute_value('ref', u_line))
             # tag elements can be found inside nodes or ways
             elif element_name == 'tag':
@@ -255,13 +249,11 @@ class ReadOSM:
                     try:
                         #                 # Loop through the node's tags
                         for tag_kv in feature_tags:
-                            # values = [node_id, node_point]
                             node_cursor_key = tag_kv[0]
-
                             # If tag matches a feature class, find that cursor
                             if node_cursor_key in self.categories:
-                                values = {'node_id': str(node_details[0]),
-                                          'geometry': Point(float(node_details[1]), float(node_details[2]))}
+                                values = {'node_id': node_details[0],
+                                          'geometry': Point(node_details[1], node_details[2])}
                                 # node_cat = node_cursor_key
                                 node_fieldnames = self.std_flds[node_cursor_key]
                                 # Loop through tags again, inserting into field values
@@ -291,12 +283,11 @@ class ReadOSM:
                         # Loop through the way's tags
                         for tag_kv in feature_tags:
                             key = tag_kv[0]
-
                             # If tag matches a feature class, we will use this way
                             if key in self.categories:
                                 values = {'attrib': {}}
-                                way_cat = key
-                                way_fieldnames = self.std_flds[way_cat]
+                                # way_cat = key
+                                way_fieldnames = self.std_flds[key]
                                 # Loop through tags again, inserting into field values
                                 for the_tag in feature_tags:
                                     the_key = the_tag[0]
@@ -306,7 +297,7 @@ class ReadOSM:
 
                                 values['ref'] = way_ref_list  # Used as an index to align points in the correct sequence
                                 values['ref_remaing'] = way_ref_list  # Used to keep track of nodes in geometry creation
-                                values['way_cat'] = way_cat
+                                values['way_cat'] = key
                                 values['way_id'] = way_id
                                 values['coords'] = {}  # Place Holder for Ref Coords
 
@@ -316,7 +307,7 @@ class ReadOSM:
 
                     except Exception as e:
                         print(e)
-                        print('\tError reading way with id: {0}'.format(way_id))
+                        print(f'\tError reading way with id: {way_id}')
 
                 has_valid_tags = False  # Reset valid tags flag
 
@@ -365,7 +356,7 @@ class ProcessOSM:
             self.polygonb = True
 
         self.std_flds = read_themes(themes)
-        self.categories = list(self.std_flds.keys())
+        self.categories = list(self.std_flds)
 
     def process(self):
         try:
@@ -408,20 +399,22 @@ class ProcessOSM:
         begin_time = time.time()
         print(f'Processing Nodes for {theme}')
         count = 0
-        # Load pickle theme element
-        pkl_points = os.path.join(self.tempf, f'{theme}_point.pkl')
 
         # Build Data Structure
-        flds = {}
+
         std_flds = read_themes([theme])
+        flds = {'node_id': [], 'geometry': []}
+        flds.update({item: [] for item in std_flds[theme]})
 
         # Add keys for additional information
-        flds['node_id'] = []
-        flds['geometry'] = []
+        # flds['node_id'] = []
+        # flds['geometry'] = []
+        # for item in std_flds[theme]:
+        #    flds[item] = []
+        # flds.update({item: [] for item in std_flds[theme]})
 
-        for item in std_flds[theme]:
-            flds[item] = []
-
+        # Load pickle theme element
+        pkl_points = os.path.join(self.tempf, f'{theme}_point.pkl')
         # Load data from pickle file
         for node in list(self.loadall(pkl_points)):
             # print(node)
@@ -467,14 +460,17 @@ class ProcessOSM:
 
         # Grab attributes for theme for data schema
         std_flds = read_themes([theme])
+
         if self.lineb:
             line_flds = {'way_id': [], 'geometry': []}
-            for item in std_flds[theme]:
-                line_flds[item] = []
+            line_flds.update({item: [] for item in std_flds[theme]})
+            #for item in std_flds[theme]:
+            #    line_flds[item] = []
         if self.polygonb:
             poly_flds = {'way_id': [], 'geometry': []}
-            for item in std_flds[theme]:
-                poly_flds[item] = []
+            poly_flds.update({item: [] for item in std_flds[theme]})
+            # for item in std_flds[theme]:
+            #     poly_flds[item] = []
 
         completed_lines_count = 0
         completed_polygons_count = 0
@@ -497,8 +493,9 @@ class ProcessOSM:
                 # Add nodes from block to a dictionary
                 try:
                     for node_string in nodes_file_list:
-                        node_list = node_string.split(':')
-                        nodes[node_list[0]] = (node_list[1], node_list[2])
+                        # node_list = node_string.split(':')
+                        # nodes[node_list[0]] = (node_list[1], node_list[2])
+                        nodes[node_string[0]] = (node_string[1], node_string[2])
                 except Exception as e:
                     print(e)
                     print(f'\t\tError loading block: {block_num} of {self.block_count}')
@@ -509,6 +506,7 @@ class ProcessOSM:
                     # Load pickle theme element
                     pkl_ways = os.path.join(self.tempf, f'{theme}_way.pkl')
                     # unbuilt_ways = list(self.loadall(pkl_ways))
+                    # Less memory to lazy load the data
                     unbuilt_ways = self.loadall(pkl_ways)
                     still_unbuilt_ways = open(os.path.join(self.tempf, f'still_unbuilt_ways{theme}.pkl'), 'wb')
 
@@ -521,7 +519,7 @@ class ProcessOSM:
                 for way in unbuilt_ways:
 
                     if completed_ways_count > 0 and completed_ways_count % 10000 == 0:
-                        print('\t\tBuilt ways: {0:,}'.format(completed_ways_count))
+                        print(f'\t\tBuilt ways: {completed_ways_count:,}')
 
                     way_nodes_id_list = way['ref_remaing']  # Starts off as an exact copy of ref key
                     ref_remaing = []  # key that blank are appended to this list
@@ -603,7 +601,7 @@ class ProcessOSM:
                               os.path.join(self.tempf, f'{theme}_way.pkl'))
                 except Exception as e:
                     print(e)
-                    print('\tError cleaning up block number: {0}'.format(block_num))
+                    print(f'\tError cleaning up block number: {block_num}')
 
             # for key in line_flds:
             #     print(f"{key},{len(line_flds[key])}")

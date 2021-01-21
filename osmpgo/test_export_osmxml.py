@@ -31,7 +31,7 @@ def test_get_element_name(create_readosm):
 
 def test_get_node_details(create_readosm):
     node = '<node id="625025" lat="42.5142133" lon="1.5527243"/>'
-    assert create_readosm.get_node_details(node) == ('625025', '1.5527243', '42.5142133')
+    assert create_readosm.get_node_details(node) == ('625025', 1.5527243, 42.5142133)
 
 
 def test_get_attribute_value(create_readosm):
