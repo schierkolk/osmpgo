@@ -3,6 +3,7 @@ from setuptools.command.install import install
 import subprocess
 import platform
 import sys
+import versioneer
 
 
 def get_virtualenv_path():
@@ -44,12 +45,13 @@ class CustomInstall(install):
 
 setup(
     name='osmpgo',
-    version='0.1',
+    version=versioneer.get_version(),
     author="Chris Schierkolk",
     author_email="Chris.Schierkolk@maxar.com",
     description="Mutliprocessing for OSM creation",
     packages=find_packages(),
-    cmdclass={'install': CustomInstall},
+    cmdclass={'install': CustomInstall,
+              'get_cmdclass': versioneer.get_cmdclass()},
     include_package_data = True,
     package_data={'': ['data/*.csv']},
     install_requires=[
