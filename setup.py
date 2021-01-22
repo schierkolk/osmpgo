@@ -52,7 +52,7 @@ setup(
     packages=find_packages(),
     cmdclass={'install': CustomInstall,
               'get_cmdclass': versioneer.get_cmdclass()},
-    include_package_data = True,
+    include_package_data=True,
     package_data={'': ['data/*.csv']},
     install_requires=[
         'Click',

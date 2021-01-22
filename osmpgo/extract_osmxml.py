@@ -2,11 +2,21 @@ import os
 import geopandas as gpd
 import subprocess
 from tempfile import mkstemp
+from typing import List, Dict, Union, Optional, Any
 
 
 def write_osm(inputs: str, output: str, osmconvert: str, poly: str = None, bbox: list = None) -> None:
     """
-        Run osmcovert to clip and/or write pbf file
+    Used OSMCONVERT to write OSM.XML file for use by the export package
+    Args:
+        inputs: OSM File
+        output: Output location for OSM.XML
+        osmconvert: Path to osmconvert executable
+        poly: file path to poly file
+        bbox: list of coordinates
+
+    Returns:
+        The return is None
     """
 
     try:
@@ -44,6 +54,15 @@ def write_osm(inputs: str, output: str, osmconvert: str, poly: str = None, bbox:
 def write_poly(clip_data: str, output: str, layer: str = None) -> str:
     """
         Read shapefile/shape and write *.poly file for use with osmconvert
+
+    Args:
+        clip_data: path to geometry file (shape/fgdb)
+        output: output file path
+        layer: layer name if FGDB
+
+    Returns:
+        The return is a string to the path of the .poly flie
+
     """
     if os.path.splitext(clip_data)[-1] == '.shp':
         print('Processing shapefile')
@@ -85,7 +104,16 @@ def write_poly(clip_data: str, output: str, layer: str = None) -> str:
     return poly
 
 
-def extract_coords(geom):
+def extract_coords(geom) -> list:
+    """
+    Extract Polygon/MultiPolygon coordinates
+    Args:
+        geom: shapely geometry object
+
+    Returns:
+        The return is a list of extracted coordinates
+
+    """
     coords = []
     if geom.type == 'Polygon':
         coords.append(extract_poly_coords(geom))
@@ -96,7 +124,16 @@ def extract_coords(geom):
     return coords
 
 
-def extract_poly_coords(geom):
+def extract_poly_coords(geom) -> List[Dict[str, Union[Optional[list], Any]]]:
+    """
+    Extract Polygon Coords
+    Args:
+        geom: shapely polygon object
+
+    Returns:
+        The return is a dictionary of internal and external coordinates
+
+    """
     exterior_coords = None
     interior_coords = None
     if geom.type == 'Polygon':
@@ -110,7 +147,16 @@ def extract_poly_coords(geom):
 
 
 # noinspection SpellCheckingInspection
-def extract_multi_poly_coords(geom):
+def extract_multi_poly_coords(geom) -> list:
+    """
+    Extract MultiPolygon Coords
+    Args:
+        geom: shapely polygon object
+
+    Returns:
+        The return is a dictionary of internal and external coordinates
+
+    """
     coords = []
     if geom.type == 'MultiPolygon':
         for part in geom:

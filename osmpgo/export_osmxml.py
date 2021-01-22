@@ -10,13 +10,18 @@ import tempfile
 import pickle
 import geopandas as gpd
 from shapely.geometry import Point, Polygon, LineString
+from typing import Iterable, Any
 
 
 def read_themes(themes: list) -> dict:
     """
-    Uses CSV file and theme parameter to create custom dictionary base on users input
-    :param themes:
-    :return: dict
+        Uses CSV file and theme parameter to create custom dictionary base on users input
+
+    Args:
+        themes: list of key OSM themes
+
+    Returns:
+        The return value is dictionary that represents the data/field structure of the them
     """
 
     std_flds_all = {}
@@ -97,7 +102,12 @@ class ReadOSM:
     def get_attribute_value(name: str, line: str) -> str:
         """
         Gets the value of the named attribute from the string
+        Args:
+            name: Name of Tag
+            line: XML Line
 
+        Returns:
+            The return value is a string representing the attribute
         """
         sa = line.find(' ' + name + '="') + len(name) + 3
         ea = line.find('"', sa)
@@ -106,9 +116,12 @@ class ReadOSM:
 
     def get_node_details(self, line: str) -> tuple:
         """
-        Extract node id, lon, and lat from a line of xml text
-        :param line: str
-        :return: tuple
+
+        Args:
+            line: XML Line
+
+        Returns:
+            The return value is a tuple of the ID, Longitude and Lattitude extracted from the XML line.
         """
         nid = str(self.get_attribute_value('id', line))
         nx = float(self.get_attribute_value('lon', line))
@@ -116,21 +129,28 @@ class ReadOSM:
 
         return nid, nx, ny
 
-    def return_id(self, line: str):
+    def return_id(self, line: str) -> str:
         """
-        Get the id attribute from a line of xml text used for ways and its segments; id is only attribute needed
+         Get the id attribute from a line of xml text used for ways and its segments; id is only attribute needed
 
-        :param line: str
-        :return: str
+        Args:
+            line: XML Line
+
+        Returns:
+            The return value is a string that represent the ID
+
         """
 
         return self.get_attribute_value('id', line)
 
-    def get_tag_details(self, line: str):
+    def get_tag_details(self, line: str) -> tuple:
         """
         Get key and value from tag
-        :param line: str
-        :return: str, str
+        Args:
+            line: XML Line
+
+        Returns:
+            The return value is a tuple of the Key and Value extracted from the XML line.
         """
 
         k = self.get_attribute_value('k', line)[:29]
@@ -139,6 +159,12 @@ class ReadOSM:
         return k, v
 
     def readxml(self):
+        """
+        Reads, interprets XML file then write objects to pickle file.
+        Returns:
+            None
+        """
+
         # Create initial temp files to keep track of nodes and ways
         self.block_count = 1
 
@@ -327,7 +353,7 @@ class ReadOSM:
 
 class ProcessOSM:
     """
-        Processing Class
+    Processing Class that readout the output fro the ReadOSM process
     """
 
     def __init__(self, themes: list, features: list, workers: int,
@@ -358,7 +384,11 @@ class ProcessOSM:
         self.std_flds = read_themes(themes)
         self.categories = list(self.std_flds)
 
-    def process(self):
+    def process(self) -> None:
+        """
+        Mutliprocessing loop for point and line/polygons. Cleans up tmp directory at the end
+
+        """
         try:
             if self.pointb:
 
@@ -386,15 +416,15 @@ class ProcessOSM:
         if os.path.exists(self.tempf):
             rmtree(self.tempf)
 
-    # sorted_tuples = sorted(dict1.items(), key=lambda item: item[1])
-    # print(sorted_tuples)  # [(1, 1), (3, 4), (2, 9)]
-    # sorted_dict = {k: v for k, v in sorted_tuples}
-
     def process_nodes(self, theme: str) -> str:
         """
         Process Point Themes in a GeoPackage
-        :param theme:
-        :return:
+        Args:
+            theme: Key theme from OSM
+
+        Returns:
+            The return value. String that describes completion
+
         """
         begin_time = time.time()
         print(f'Processing Nodes for {theme}')
@@ -405,13 +435,6 @@ class ProcessOSM:
         std_flds = read_themes([theme])
         flds = {'node_id': [], 'geometry': []}
         flds.update({item: [] for item in std_flds[theme]})
-
-        # Add keys for additional information
-        # flds['node_id'] = []
-        # flds['geometry'] = []
-        # for item in std_flds[theme]:
-        #    flds[item] = []
-        # flds.update({item: [] for item in std_flds[theme]})
 
         # Load pickle theme element
         pkl_points = os.path.join(self.tempf, f'{theme}_point.pkl')
@@ -437,7 +460,16 @@ class ProcessOSM:
         return text
 
     @staticmethod
-    def loadall(filename: str):
+    def loadall(filename: str) -> Iterable[Any]:
+        """
+        Sequential Lazy Unpickler
+        Args:
+            filename: Filename of pickle file
+
+        Returns:
+            The return value. Unpickled OBject
+
+        """
         with open(filename, "rb") as f:
             while True:
                 try:
@@ -452,8 +484,12 @@ class ProcessOSM:
 
         The code as it stands does not account for relation that would create multipart polygons and holes
          in existing polygons
-        :param theme:
-        :return:
+        Args:
+            theme: Key theme from OSM
+
+        Returns:
+            The return value. String that describes completion
+
         """
         begin_time = time.time()
         print(f'Processing Ways for {theme}')
@@ -464,7 +500,7 @@ class ProcessOSM:
         if self.lineb:
             line_flds = {'way_id': [], 'geometry': []}
             line_flds.update({item: [] for item in std_flds[theme]})
-            #for item in std_flds[theme]:
+            # for item in std_flds[theme]:
             #    line_flds[item] = []
         if self.polygonb:
             poly_flds = {'way_id': [], 'geometry': []}
@@ -636,6 +672,12 @@ class ProcessOSM:
     def determine_force_way_to_line(cat: str, atts: dict) -> bool:
         """
         Part of the legacy code
+        Args:
+            cat: Key OSM theme
+            atts: Fields for specific theme.
+
+        Returns:
+            The return value. True for success, False otherwise.
         """
 
         if cat in ['barrier', 'boundary', 'highway', 'public_transport', 'railway', 'route']:
