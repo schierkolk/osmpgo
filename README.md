@@ -1,10 +1,10 @@
 # OSMPGO
 Installation
 * CD into the deliver folder
-**	There should be a environmental.yml and the osmpgo folder
+ * There should be a environmental.yml and the osmpgo folder
 * Create conda environment
-**	conda env create
-**	conda activate osmpgo
+ * conda env create
+ * conda activate osmpgo
 Install OSMPGO python package
 	pip install . -v
 	Be sure to include the .
