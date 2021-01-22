@@ -8,7 +8,7 @@ import os
 
 def combine_gpkg(inputs: str, outputs: str, prefix: str) -> None:
     """
-    Combines seperate geopackages
+    Combines separate geopackages
     Args:
         inputs: path to geopackages
         outputs: output geopackage

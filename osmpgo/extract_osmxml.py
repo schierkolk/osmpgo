@@ -61,7 +61,7 @@ def write_poly(clip_data: str, output: str, layer: str = None) -> str:
         layer: layer name if FGDB
 
     Returns:
-        The return is a string to the path of the .poly flie
+        The return is a string to the path of the .poly file
 
     """
     if os.path.splitext(clip_data)[-1] == '.shp':
