@@ -39,4 +39,9 @@ def combine_gpkg(inputs: str, outputs: str, prefix: str) -> None:
 def timer(start, end):
     hours, rem = divmod(end-start, 3600)
     minutes, seconds = divmod(rem, 60)
-    return '{:0>2}:{:0>2}:{:05.2f}'.format(int(hours),int(minutes),seconds)
+    if int(hours) > 0:
+        return '{:0>2} Hour {:0>2} Minutes {:05.2f} Seconds '.format(int(hours), int(minutes), seconds)
+    elif int(minutes) > 0:
+        return '{:0>2} Minutes {:05.2f} Seconds'.format(int(minutes), seconds)
+    else:
+        return '{:05.2f} Seconds '.format(seconds)

@@ -664,7 +664,7 @@ class ProcessOSM:
                 else:
                     print(f'Line Theme {theme} is empty')
 
-            text = f'Line and Polygon Theme {theme} completed after {timer(begin_time, time.time())} ' \
+            text = f'Line and Polygon Theme {theme} completed after {timer(begin_time, time.time())}' \
                    f'with {completed_lines_count} lines and {completed_polygons_count} polygons.'
         except Exception as e:
             print(e)
