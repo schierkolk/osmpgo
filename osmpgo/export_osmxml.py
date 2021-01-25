@@ -11,6 +11,9 @@ import pickle
 import geopandas as gpd
 from shapely.geometry import Point, Polygon, LineString
 from typing import Iterable, Any
+from osmpgo.util import timer
+
+
 
 
 def read_themes(themes: list) -> dict:
@@ -456,7 +459,7 @@ class ProcessOSM:
         else:
             print(f'Point Theme {theme} is empty')
 
-        text = f'Point Theme {theme} completed after {round(time.time() - begin_time, 0)} seconds with {count} points.'
+        text = f'Point Theme {theme} completed after {timer(begin_time, time.time())} with {count} points.'
         return text
 
     @staticmethod
@@ -661,8 +664,8 @@ class ProcessOSM:
                 else:
                     print(f'Line Theme {theme} is empty')
 
-            text = f'Line and Polygon Theme {theme} completed after {round(time.time() - begin_time, 0)} ' \
-                   f'seconds with {completed_lines_count} lines and {completed_polygons_count} polygons.'
+            text = f'Line and Polygon Theme {theme} completed after {timer(begin_time, time.time())} ' \
+                   f'with {completed_lines_count} lines and {completed_polygons_count} polygons.'
         except Exception as e:
             print(e)
 

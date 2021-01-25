@@ -3,7 +3,7 @@ import sys
 import click
 from osmpgo.extract_osmxml import write_poly, write_osm
 from osmpgo.export_osmxml import ReadOSM, ProcessOSM
-from osmpgo.util import combine_gpkg
+from osmpgo.util import combine_gpkg, timer
 import time
 
 
@@ -15,7 +15,7 @@ def cli():
 # noinspection SpellCheckingInspection
 @cli.command('export', short_help='Export OSM.XML to gpkg')
 @click.argument('inputs', type=click.Path(exists=True))
-@click.argument('output', type=click.Path(exists=True))
+@click.argument('output', type=click.Path())
 @click.argument('prefix', type=str)
 @click.option('-t', '--theme', type=str, help='Individual themes in a comma separated list.')
 @click.option('-f', '--feature', type=str, help='Feature type point,line,polygon')
@@ -84,13 +84,31 @@ def export(inputs, output, prefix, theme, feature, workers, mem_factor):
                 exit()
     print('Processing the following features {}'.format(','.join(features)))
 
+    input_folder = True
+    while input_folder and not os.path.exists(output):
+        val = input('Create new folder (Y/N)')
+        if val.lower() == 'y' or val.lower() == 'n':
+            if not os.path.exists(output) and val.lower() == 'y':
+                os.mkdir(output)
+                print(f'Created folder: {output}')
+            elif os.path.exists(output) and val.lower() == 'y' or os.path.exists(output) and val.lower() == 'n':
+                print(f'Folder: {output} exists')
+            else:
+                print(f'You need to create the folder: {output} because you selected N')
+                exit()
+            input_folder = False
+        else:
+            print(f'Your entry: {val} is not valid (Y/N)')
+
+    print('Keep on Trucking')
+
     rosm = ReadOSM(inputs, themes, features, mem_factor)
     rosm.readxml()
 
     posm = ProcessOSM(themes, features, workers, rosm.tempf, output, prefix, rosm.block_count)
     posm.process()
 
-    print(f'Finished exporting after {round(time.time() - begin_time, 0)} seconds.')
+    print(f'Finished exporting after {timer(begin_time, time.time())}.')
 
 
 '''
@@ -184,7 +202,7 @@ def extract(inputs, output, osmconvert, bbox, clip_data, layer):
     # except OSError as e:
     #     print(e)
     #     print(f'Please delete {poly}')
-    print(f'Finished extracting after {round(time.time() - begin_time, 0)} seconds.')
+    print(f'Finished extracting after {timer(begin_time, time.time())}.')
 
 
 @cli.command('combine', short_help='Combine gpkg')

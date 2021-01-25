@@ -34,3 +34,9 @@ def combine_gpkg(inputs: str, outputs: str, prefix: str) -> None:
         print('No input files found')
 
     # combine_gpkg('/vagrant/output','/vagrant/test.gpkg','andorra_e_l-ns3')
+
+
+def timer(start, end):
+    hours, rem = divmod(end-start, 3600)
+    minutes, seconds = divmod(rem, 60)
+    return '{:0>2}:{:0>2}:{:05.2f}'.format(int(hours),int(minutes),seconds)
